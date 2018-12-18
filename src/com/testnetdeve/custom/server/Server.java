@@ -4,10 +4,6 @@ package com.testnetdeve.custom.server;
 import com.testnetdeve.NettyConstant;
 import com.testnetdeve.custom.codec.AlarmMessageDecoder;
 import com.testnetdeve.custom.codec.AlarmMessageEncoder;
-import com.testnetdeve.custom.server.AlarmMessageRespHandler;
-import com.testnetdeve.custom.server.HeartBeatRespHandler;
-import com.testnetdeve.custom.server.LoginAuthRespHandler;
-import com.testnetdeve.custom.server.ServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -29,13 +25,13 @@ public class Server {
 
 
     public static void main(String[] args) throws Exception {
-        //ONE:
+
         //1 用于接受客户端连接的线程工作组
         EventLoopGroup boss = new NioEventLoopGroup();
         //2 用于对接受客户端连接读写操作的线程工作组
         EventLoopGroup work = new NioEventLoopGroup();
 
-        //TWO:
+
         //3 辅助类。用于帮助我们创建NETTY服务
         ServerBootstrap b = new ServerBootstrap();
         b.group(boss, work)	//绑定两个工作线程组
@@ -61,7 +57,7 @@ public class Server {
 
         ChannelFuture cf = b.bind(NettyConstant.REMOTEIP,NettyConstant.PORT).sync();
 
-        System.out.println("Netty server start ok : "
+        System.out.println("Netty server start ok on: "
                 + (NettyConstant.REMOTEIP + " : " + NettyConstant.PORT));
 
         //释放连接
