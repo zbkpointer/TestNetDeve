@@ -7,8 +7,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.testnetdeve.MessageType;
 import com.testnetdeve.ResultType;
+import com.testnetdeve.custom.database.MySQLDB;
 import com.testnetdeve.custom.struct.Header;
 import com.testnetdeve.custom.struct.AlarmMessage;
+import io.netty.util.AttributeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,10 +28,14 @@ public class LoginAuthRespHandler extends ChannelInboundHandlerAdapter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LoginAuthRespHandler.class);
 	/**
-	 * 考虑到安全，链路的建立需要通过基于IP地址或者号段的黑白名单安全认证机制，本例中，多个IP通过逗号隔开
+	 * 考虑到安全，链路的建立需要通过基于IP地址或者号段的黑白名单安全认证机制，多个IP通过逗号隔开
 	 */
-	private Map<String, Boolean> nodeCheck = new ConcurrentHashMap<String, Boolean>();
+	private static final Map<String, String> nodeCheck = new ConcurrentHashMap<String, String>();
+
 	private String[] whiteList = { "127.0.0.1", "192.168.56.1" };
+
+	public static AttributeKey<String> MY_KEY =  AttributeKey.valueOf("zbk");
+
 
 	/**
 	 * Calls {@link ChannelHandlerContext#fireChannelRead(Object)} to forward to
@@ -37,6 +43,7 @@ public class LoginAuthRespHandler extends ChannelInboundHandlerAdapter {
 	 * 
 	 * Sub-classes may override this method to change behavior.
 	 */
+
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		AlarmMessage message = (AlarmMessage) msg;
@@ -61,7 +68,11 @@ public class LoginAuthRespHandler extends ChannelInboundHandlerAdapter {
 				}
 				loginResp = isOK ? buildResponse(ResultType.SUCCESS) : buildResponse(ResultType.FAIL);
 				if (isOK)
-					nodeCheck.put(nodeIndex, true);
+					nodeCheck.put(nodeIndex, message.getBody().toString());
+					//给Channel添加属性
+				    //ctx.channel().attr(MY_KEY).set((String) message.getBody());
+					MySQLDB.insertClientInfo((String) message.getBody());
+                    System.out.println(nodeCheck.get(nodeIndex));
 			}
 			LOGGER.info("The login response is : {} body [{}]",loginResp,loginResp.getBody());
 			ctx.writeAndFlush(loginResp);
@@ -88,12 +99,39 @@ public class LoginAuthRespHandler extends ChannelInboundHandlerAdapter {
 		return message;
 	}
 
-	public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+
+
+
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+
+        String nodeIndex = ctx.channel().remoteAddress().toString();
+        ctx.close();
+
+        if(nodeCheck.containsKey(nodeIndex)){
+        	try{
+				MySQLDB.updateClientInfo(nodeCheck.get(nodeIndex));
+			}catch (Exception e){
+        		e.printStackTrace();
+			}
+
+            String[] clientInfo = nodeCheck.get(nodeIndex).split(",",-1);
+            LOGGER.info(clientInfo[0] + "栋" + clientInfo[1] + "单元" + clientInfo[2] + "室" + "断开了连接！");
+
+            nodeCheck.remove(nodeIndex);
+            LOGGER.info("剩余客户端数：" + nodeCheck.size() + "个");
+
+        }
+    }
+
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
 		cause.printStackTrace();
-		nodeCheck.remove(ctx.channel().remoteAddress().toString());// 删除缓存
+		//nodeCheck.remove(ctx.channel().remoteAddress().toString());// 删除缓存
 		ctx.close();
 		ctx.fireExceptionCaught(cause);
 	}
 
-
+    public synchronized static Map<String, String> getNodeCheck() {
+        return nodeCheck;
+    }
 }

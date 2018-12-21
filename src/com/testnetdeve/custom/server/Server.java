@@ -13,6 +13,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.util.concurrent.*;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,7 +24,6 @@ public class Server {
 
     public static final ExecutorService exc = Executors.newSingleThreadExecutor();
 
-
     public static void main(String[] args) throws Exception {
 
         //1 用于接受客户端连接的线程工作组
@@ -31,9 +31,17 @@ public class Server {
         //2 用于对接受客户端连接读写操作的线程工作组
         EventLoopGroup work = new NioEventLoopGroup();
 
+        //执行高耗时操作
+        EventExecutor extractExecutor = new UnorderedThreadPoolEventExecutor(10);
+
+        //事件被EventExecutorGroup的某个EventExecutor执行，从ChannelPipeline中移除
+        EventExecutorGroup eventExecutor = new DefaultEventExecutorGroup(1);
+
+        //BusinessHandler businessHandler = new BusinessHandler();
 
         //3 辅助类。用于帮助我们创建NETTY服务
         ServerBootstrap b = new ServerBootstrap();
+
         b.group(boss, work)	//绑定两个工作线程组
                 .channel(NioServerSocketChannel.class)	//设置NIO的模式
                 .option(ChannelOption.SO_BACKLOG, 1024)	//设置TCP缓冲区
@@ -50,7 +58,8 @@ public class Server {
                         sc.pipeline().addLast("readTimeoutHandler",new ReadTimeoutHandler(50));
                         sc.pipeline().addLast("LoginAuthHandler",new LoginAuthRespHandler());
                         sc.pipeline().addLast("HeartBeatHandler",new HeartBeatRespHandler());
-                        sc.pipeline().addLast("AlarmMessageHandle",new AlarmMessageRespHandler());
+                       // sc.pipeline().addLast("AlarmMessageHandle",new AlarmMessageRespHandler());
+                       // sc.pipeline().addLast(eventExecutor,new BusinessHandler());
                         sc.pipeline().addLast(new ServerHandler());
                     }
                 });

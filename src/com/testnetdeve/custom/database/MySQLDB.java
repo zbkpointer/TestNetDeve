@@ -89,6 +89,69 @@ public class MySQLDB {
         return i > 0 ;
     }
 
+    /**
+     * 插入住户信息
+     * @param str
+     * @return boolean
+     */
+
+    public synchronized static void insertClientInfo(String str){
+
+        Connection conn =getConn();
+        if(conn != null){
+            if(str != null) {
+                String[] strings = str.split(",", -1);
+                try {
+                    String insertSql = "insert into fa_client_status (idofbuilding,cellofbuilding,idofroom,onlinestatus) values(?,?,?,?)";
+                    PreparedStatement prest = conn.prepareStatement(insertSql);
+
+                    prest.setString(1, strings[0]);
+                    prest.setString(2, strings[1]);
+                    prest.setString(3, strings[2]);
+                    //插入1表明是在线
+                    prest.setInt(4, 1);
+                    prest.executeUpdate();
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
+
+    }
+
+    /**
+     * 删除住户信息
+     * @param str
+     * @return boolean
+     */
+
+    public static void updateClientInfo(String str){
+
+        Connection conn =getConn();
+        if(conn != null){
+            if(str != null) {
+                String[] strings = str.split(",", -1);
+                try {
+                    String insertSql = "update fa_client_status set onlinestatus = 0 where idofbuilding = ? and cellofbuilding = ? and idofroom = ?";
+                    PreparedStatement prest = conn.prepareStatement(insertSql);
+
+                    prest.setString(1, strings[0]);
+                    prest.setString(2, strings[1]);
+                    prest.setString(3, strings[2]);
+
+                    prest.executeUpdate();
+                    LOGGER.info("更新成功");
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+
+            }
+        }
+
+    }
 
     public static void update(HashSet<String> hashSet){
         Connection conn = getConn();
@@ -142,169 +205,177 @@ public class MySQLDB {
      *更新住户在线状态表
      *
      */
-    public static void updateClientStatus(HashSet<String> clientIds){
-        Connection conn = null;
-
-        try{
-            conn = getConn();
-            conn.setAutoCommit(false);
-        }catch (SQLException e){
-            e.printStackTrace();
-        }
-
-        Iterator iteratorClientIds = clientIds.iterator();
+    public synchronized static void updateClientStatus(HashSet<String> clientIds){
+        if(clientIds.size() >= 1) {
 
 
-        long currentTime = System.currentTimeMillis();
-        try {
+            Connection conn = null;
 
-            /**
-             * @function 更新整张表状态为下线
-             */
-            String sql = "update fa_client_status set onlinestatus = 0";
-            PreparedStatement prest = conn.prepareStatement(sql);
+            try {
+                conn = getConn();
+                conn.setAutoCommit(false);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
 
-            prest.executeUpdate();
-            conn.commit();
+            Iterator iteratorClientIds = clientIds.iterator();
 
 
-            }catch (SQLException e1){
+            long currentTime = System.currentTimeMillis();
+            try {
+
+                /**
+                 * @function 更新整张表状态为下线
+                 */
+                String sql = "update fa_client_status set onlinestatus = 0";
+                PreparedStatement prest = conn.prepareStatement(sql);
+
+                prest.executeUpdate();
+                conn.commit();
+
+
+            } catch (SQLException e1) {
                 e1.printStackTrace();
             }
 
-        long endTime = System.currentTimeMillis();
+            long endTime = System.currentTimeMillis();
 
-        LOGGER.info("更新下线状态的执行时间为-->"+ (endTime - currentTime)+"毫秒");
-
-
-        try {
-            String selectSql = "select * from fa_client_status";
-            PreparedStatement prest = conn.prepareStatement(selectSql);
-            ResultSet rs = prest.executeQuery();
-            conn.commit();
-            while (rs.next()){
-                String[] strings = new String[3];
-                strings[0] = rs.getString("idofbuilding");
-                strings[1] = rs.getString("cellofbuilding");
-                strings[2] = rs.getString("idofroom");
-                String str = strings[0] + "," + strings[1] +"," +strings[2];
-                //System.out.println(str);
-
-                sqlList.add(str);
-
-            }
-
-            LOGGER.info("数据库表中有"+ sqlList.size() +"条记录");
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+            LOGGER.info("更新下线状态的执行时间为-->" + (endTime - currentTime) + "毫秒");
 
 
-        long startSelectTime = System.currentTimeMillis();
-
-        while (iteratorClientIds.hasNext()){
-            //缓存住户字符串
-            String str = (String )iteratorClientIds.next();
-            String[] strings = str.split(",",-1);
-            iteratorClientIds.remove();
-
-
-            if(sqlList.contains(str)){
-                //如果数据库有此条数据，就更新
-                updateList.add(strings);
-            }else {
-
-                insertList.add(strings);
-            }
-
-        }
-
-        long endSelectTime = System.currentTimeMillis();
-        LOGGER.info("查询执行时间："+(endSelectTime - startSelectTime)/1000.f+"秒");
-
-        LOGGER.info("需要插入的数据量："+ insertList.size());
-
-        LOGGER.info("需要更新的数据量："+ updateList.size());
-
-        Iterator updateIterator = updateList.iterator();
-        updateList = null;
-        try{
-
-            String updateSql = "update fa_client_status set onlinestatus = 1 where idofbuilding = ? " +
-                    "and cellofbuilding = ? and idofroom = ?";
-            PreparedStatement prestUpdate = conn.prepareStatement(updateSql);
-
-            while (updateIterator.hasNext()) {
-                String[] strings = (String[]) updateIterator.next();
-                updateIterator.remove();
-                prestUpdate.setString(1, strings[0]);
-                prestUpdate.setString(2, strings[1]);
-                prestUpdate.setString(3, strings[2]);
-                prestUpdate.addBatch();
-            }
-            if (prestUpdate != null) {
-                long startUpdateTime = System.currentTimeMillis();
-
-                prestUpdate.executeBatch();
+            try {
+                String selectSql = "select * from fa_client_status";
+                PreparedStatement prest = conn.prepareStatement(selectSql);
+                ResultSet rs = prest.executeQuery();
                 conn.commit();
+                while (rs.next()) {
+                    String[] strings = new String[3];
+                    strings[0] = rs.getString("idofbuilding");
+                    strings[1] = rs.getString("cellofbuilding");
+                    strings[2] = rs.getString("idofroom");
+                    String str = strings[0] + "," + strings[1] + "," + strings[2];
+                    //System.out.println(str);
 
-                long endUpdateTime = System.currentTimeMillis();
-                prestUpdate.clearBatch();
-                LOGGER.info("执行更新时间为："+(endUpdateTime - startUpdateTime)/1000.f + "秒");
-                LOGGER.info("更新成功");
-            }else {
-                LOGGER.info("没有需要更新的值");
+                    sqlList.add(str);
+
+                }
+
+                LOGGER.info("数据库表中有" + sqlList.size() + "条记录");
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
 
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+            long startSelectTime = System.currentTimeMillis();
 
-        Iterator insertIterator = insertList.iterator();
-        insertList = null;
+            while (iteratorClientIds.hasNext()) {
+                //缓存住户字符串
+                String str = (String) iteratorClientIds.next();
+                String[] strings = str.split(",", -1);
+                iteratorClientIds.remove();
 
-        try {
 
-            PreparedStatement prestInsert = null;
-            String insertSql = "insert into fa_client_status (idofbuilding,cellofbuilding,idofroom,onlinestatus) values(?,?,?,?)";
-            prestInsert = conn.prepareStatement(insertSql);
-            while (insertIterator.hasNext()) {
-                String[] strings = (String[]) insertIterator.next();
-                insertIterator.remove();
+                if (sqlList.contains(str)) {
+                    //如果数据库有此条数据，就更新
+                    updateList.add(strings);
+                } else {
 
-                prestInsert.setString(1, strings[0]);
-                prestInsert.setString(2, strings[1]);
-                prestInsert.setString(3, strings[2]);
-                //插入1表明是在线
-                prestInsert.setInt(4, 1);
+                    insertList.add(strings);
+                }
 
-                prestInsert.addBatch();
-            }
-            if (prestInsert != null) {
-
-                prestInsert.executeBatch();
-                conn.commit();
-                prestInsert.clearBatch();
-            }else {
-                LOGGER.info("没有新的值需要插入");
             }
 
+            long endSelectTime = System.currentTimeMillis();
+            LOGGER.info("查询执行时间：" + (endSelectTime - startSelectTime) / 1000.f + "秒");
 
-        } catch (SQLException e) {
-            e.printStackTrace();
+            LOGGER.info("需要插入的数据量：" + insertList.size());
+
+            LOGGER.info("需要更新的数据量：" + updateList.size());
+
+            if (updateList != null) {
+
+                Iterator updateIterator = updateList.iterator();
+                updateList = null;
+                try {
+
+                    String updateSql = "update fa_client_status set onlinestatus = 1 where idofbuilding = ? " +
+                            "and cellofbuilding = ? and idofroom = ?";
+                    PreparedStatement prestUpdate = conn.prepareStatement(updateSql);
+
+                    while (updateIterator.hasNext()) {
+                        String[] strings = (String[]) updateIterator.next();
+                        updateIterator.remove();
+                        prestUpdate.setString(1, strings[0]);
+                        prestUpdate.setString(2, strings[1]);
+                        prestUpdate.setString(3, strings[2]);
+                        prestUpdate.addBatch();
+                    }
+                    if (prestUpdate != null) {
+                        long startUpdateTime = System.currentTimeMillis();
+
+                        prestUpdate.executeBatch();
+                        conn.commit();
+
+                        long endUpdateTime = System.currentTimeMillis();
+                        prestUpdate.clearBatch();
+                        LOGGER.info("执行更新时间为：" + (endUpdateTime - startUpdateTime) / 1000.f + "秒");
+                        LOGGER.info("更新成功");
+                    } else {
+                        LOGGER.info("没有需要更新的值");
+                    }
+
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            if (insertList != null) {
+
+                Iterator insertIterator = insertList.iterator();
+                insertList = null;
+
+                try {
+
+                    PreparedStatement prestInsert = null;
+                    String insertSql = "insert into fa_client_status (idofbuilding,cellofbuilding,idofroom,onlinestatus) values(?,?,?,?)";
+                    prestInsert = conn.prepareStatement(insertSql);
+                    while (insertIterator.hasNext()) {
+                        String[] strings = (String[]) insertIterator.next();
+                        insertIterator.remove();
+
+                        prestInsert.setString(1, strings[0]);
+                        prestInsert.setString(2, strings[1]);
+                        prestInsert.setString(3, strings[2]);
+                        //插入1表明是在线
+                        prestInsert.setInt(4, 1);
+
+                        prestInsert.addBatch();
+                    }
+                    if (prestInsert != null) {
+
+                        prestInsert.executeBatch();
+                        conn.commit();
+                        prestInsert.clearBatch();
+                    } else {
+                        LOGGER.info("没有新的值需要插入");
+                    }
+
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+
+
+            try {
+
+                conn.close();
+                LOGGER.info("数据库关闭");
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
-
-
-
-        try {
-
-            conn.close();
-            LOGGER.info("数据库关闭");
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
 
     }
 
@@ -418,6 +489,8 @@ public class MySQLDB {
     }
 
 
+
+
     private static boolean select(final String[] strings){
         Connection conn =DBCPTest.getConnection();
         boolean exist = false;
@@ -503,13 +576,13 @@ public class MySQLDB {
          * 插入10000条数据
          * @ExecuteTime 约 2.6s
          */
-        for (int i = 1; i < 11; i++) {
-            for (int j = 1; j < 11; j++) {
-                for (int k = 1; k < 101; k++) {
-                    hashSet.add(String.valueOf(i)+","+String.valueOf(j)+","+String.valueOf(k));
-                }
-            }
-        }
+//        for (int i = 1; i < 11; i++) {
+//            for (int j = 1; j < 11; j++) {
+//                for (int k = 1; k < 101; k++) {
+//                    hashSet.add(String.valueOf(i)+","+String.valueOf(j)+","+String.valueOf(k));
+//                }
+//            }
+//        }
 
         /**
          * @TEST
@@ -524,7 +597,12 @@ public class MySQLDB {
 //        }
 
         long currentTime = System.currentTimeMillis();
-        MySQLDB.updateClientStatus(hashSet);
+        try{
+            MySQLDB.updateClientStatus(hashSet);
+        }catch (NullPointerException e){
+            e.printStackTrace();
+        }
+
 //
 //       // multiThreads(hashSet.iterator());
 //

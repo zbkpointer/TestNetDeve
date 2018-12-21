@@ -3,12 +3,8 @@ package com.testnetdeve.custom.server;
 
 import com.testnetdeve.MessageType;
 import com.testnetdeve.custom.database.ClientIdsEventListener;
-import com.testnetdeve.custom.database.EndListener;
-import com.testnetdeve.custom.database.MySQLDB;
-import com.testnetdeve.custom.database.UpdateClientIdRunnable;
 import com.testnetdeve.custom.struct.AlarmMessage;
 import com.testnetdeve.custom.struct.Header;
-import com.testnetdeve.threadtest.ThreadDemo;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import org.slf4j.Logger;
@@ -18,7 +14,6 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
 import java.util.*;
-import java.util.concurrent.*;
 
 /**
  * 由于采用长连接通信，在正常业务运行期间，双方通过心跳和业务消息维持链路，任何一方都不需要主动关闭链接。<br/>
@@ -34,6 +29,7 @@ import java.util.concurrent.*;
  * @date 2018年11月22日
  * @version 1.0
  */
+
 public class HeartBeatRespHandler extends ChannelInboundHandlerAdapter {
 	private static final Logger LOGGER = LoggerFactory.getLogger(HeartBeatRespHandler.class);
 
@@ -51,52 +47,54 @@ public class HeartBeatRespHandler extends ChannelInboundHandlerAdapter {
 
 	public HeartBeatRespHandler() {
 
-//		int count = 101;
-//		for (int i = 0; i < 1000; i++) {
-//			count++;
-//			clientIds.add("1,1,"+String.valueOf(count));
-//		}
+////		int count = 101;
+////		for (int i = 0; i < 1000; i++) {
+////			count++;
+////			clientIds.add("1,1,"+String.valueOf(count));
+////		}
+//
+//		this.addListener(new ClientIdsEventListener() {
+//			@Override
+//			public void onClientIdsClone(HashSet<String> hashSet) {
+//				Server.exc.execute(new Runnable() {
+//					@Override
+//					public void run() {
+//						/**
+//						 * 执行数据库操作
+//						 */
+////						long startTime = System.currentTimeMillis();
+////						MySQLDB.updateClientStatus(clientIdsClone);
+////						long endTime = System.currentTimeMillis();
+////						System.out.println("时间："+(endTime - startTime));
+//
+//						LOGGER.info("hah");
+//
+//						clientIdsClone.clear();
+//					}
+//				});
+//			}
+//		});
+//
+//		//定时任务清空住户列表
+//
+//		ScheduledFuture<?> scheduledFuture = Server.scheduled.scheduleAtFixedRate(new Runnable() {
+//			@Override
+//			public void run() {
+//				UpdateClientIdRunnable updateClientIdRunnable = new UpdateClientIdRunnable();
+//
+//				//拿到住户表的副本进行数据库操作
+//				clientIdsClone = (HashSet<String>) clientIds.clone();
+//
+//				clientIdsEventListener.onClientIdsClone(clientIdsClone);
+//				//10s内当前住户表清空
+//				clientIds.clear();
+//				System.out.println("住户表已清空！！！");
+//				LOGGER.info("clean the clientId list,the size of list is: ---> {}",clientIds.size());
+//
+//			}
+//		}, 10, 10, TimeUnit.SECONDS);
 
-		this.addListener(new ClientIdsEventListener() {
-			@Override
-			public void onClientIdsClone(HashSet<String> hashSet) {
-				Server.exc.execute(new Runnable() {
-					@Override
-					public void run() {
-						/**
-						 * 执行数据库操作
-						 */
-//						long startTime = System.currentTimeMillis();
-//						MySQLDB.updateClientStatus(clientIdsClone);
-//						long endTime = System.currentTimeMillis();
-//						System.out.println("时间："+(endTime - startTime));
 
-						LOGGER.info("hah");
-
-						clientIdsClone.clear();
-					}
-				});
-			}
-		});
-
-		//定时任务清空住户列表
-
-		ScheduledFuture<?> scheduledFuture = Server.scheduled.scheduleAtFixedRate(new Runnable() {
-			@Override
-			public void run() {
-				UpdateClientIdRunnable updateClientIdRunnable = new UpdateClientIdRunnable();
-
-				//拿到住户表的副本进行数据库操作
-				clientIdsClone = (HashSet<String>) clientIds.clone();
-
-				clientIdsEventListener.onClientIdsClone(clientIdsClone);
-				//10s内当前住户表清空
-				clientIds.clear();
-				System.out.println("住户表已清空！！！");
-				LOGGER.info("clean the clientId list,the size of list is: ---> {}",clientIds.size());
-
-			}
-		}, 10, 10, TimeUnit.SECONDS);
 
 
 
@@ -160,14 +158,14 @@ public class HeartBeatRespHandler extends ChannelInboundHandlerAdapter {
 		clientIdsEventListener = listener;
 	}
 
-
-	public static void multiThread(UpdateClientIdRunnable runnable, int executeCount, int coreThreadCount) {
-		BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
-		ThreadPoolExecutor threadPool = new ThreadPoolExecutor(coreThreadCount, 200, 2000, TimeUnit.SECONDS, queue);
-		for (int i = 0; i < executeCount; i++) {
-			threadPool.execute(runnable);
-		}
-	}
+//
+//	public static void multiThread(UpdateClientIdRunnable runnable, int executeCount, int coreThreadCount) {
+//		BlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>();
+//		ThreadPoolExecutor threadPool = new ThreadPoolExecutor(coreThreadCount, 200, 2000, TimeUnit.SECONDS, queue);
+//		for (int i = 0; i < executeCount; i++) {
+//			threadPool.execute(runnable);
+//		}
+//	}
 
 
 

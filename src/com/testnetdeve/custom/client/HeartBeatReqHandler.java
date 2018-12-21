@@ -77,7 +77,7 @@ public class HeartBeatReqHandler extends ChannelInboundHandlerAdapter {
 			Header header = new Header();
 			header.setType(MessageType.HEARTBEAT_REQ.value());
 			message.setHeader(header);
-			message.setBody("1,2,101");
+			//message.setBody("1,2,101");
 
 			return message;
 		}

@@ -13,32 +13,25 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 
+import java.util.HashMap;
+
 /**
  * @author landyChris
  * @date 2017年8月31日
  * @version 1.0
  */
 public class LoginAuthReqHandler extends ChannelInboundHandlerAdapter {
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(LoginAuthReqHandler.class);
 
-	/**
-	 * Calls {@link ChannelHandlerContext#fireChannelActive()} to forward to the
-	 * next {@link ChannelHandler} in the {@link ChannelPipeline}.
-	 * 
-	 * Sub-classes may override this method to change behavior.
-	 */
+
 	@Override
 	public void channelActive(ChannelHandlerContext ctx) throws Exception {
 		LOGGER.info("通道激活，握手请求验证...");
 		ctx.writeAndFlush(buildLoginReq());
 	}
 
-	/**
-	 * Calls {@link ChannelHandlerContext#fireChannelRead(Object)} to forward to
-	 * the next {@link ChannelHandler} in the {@link ChannelPipeline}.
-	 * 
-	 * Sub-classes may override this method to change behavior.
-	 */
+
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		AlarmMessage message = (AlarmMessage) msg;
@@ -70,6 +63,7 @@ public class LoginAuthReqHandler extends ChannelInboundHandlerAdapter {
 		Header header = new Header();
 		header.setType(MessageType.LOGIN_REQ.value());
 		message.setHeader(header);
+		message.setBody("1,2,101");
 		return message;
 	}
 

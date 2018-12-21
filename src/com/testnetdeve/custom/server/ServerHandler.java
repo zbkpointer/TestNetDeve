@@ -1,6 +1,5 @@
 package com.testnetdeve.custom.server;
 
-
 import com.testnetdeve.custom.struct.Header;
 import com.testnetdeve.custom.struct.AlarmMessage;
 import io.netty.channel.ChannelHandlerContext;
@@ -13,6 +12,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 	 */
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        System.out.println(ctx.channel().id());
     
     	System.err.println("--------通道激活------------");
     }
