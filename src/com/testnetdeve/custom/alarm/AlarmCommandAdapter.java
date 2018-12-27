@@ -1,7 +1,7 @@
 package com.testnetdeve.custom.alarm;
 
 import com.testnetdeve.custom.client.Client;
-import com.testnetdeve.test1.A;
+
 
 public abstract class AlarmCommandAdapter implements AlarmCommand {
 

@@ -1,9 +1,13 @@
 package com.testnetdeve.custom.server;
 
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.LoadingCache;
 import com.testnetdeve.NettyConstant;
 import com.testnetdeve.custom.codec.AlarmMessageDecoder;
 import com.testnetdeve.custom.codec.AlarmMessageEncoder;
+import com.testnetdeve.custom.database.MySQLDB;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -13,16 +17,25 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.*;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.concurrent.*;
 
 public class Server {
     public static final ScheduledExecutorService scheduled = Executors.newScheduledThreadPool(1);
 
     public static final ExecutorService exc = Executors.newSingleThreadExecutor();
+
+    //存储客户端信息
+    public static final Map<String,String> clientMap = new ConcurrentHashMap<>();
+
+    //构建缓存
+
+
+    public final static AttributeKey<Map<String,String>> MY_KEY =  AttributeKey.valueOf("zbk");
 
     public static void main(String[] args) throws Exception {
 
@@ -33,6 +46,10 @@ public class Server {
 
         //执行高耗时操作
         EventExecutor extractExecutor = new UnorderedThreadPoolEventExecutor(10);
+
+        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+
+
 
         //事件被EventExecutorGroup的某个EventExecutor执行，从ChannelPipeline中移除
         EventExecutorGroup eventExecutor = new DefaultEventExecutorGroup(1);
@@ -63,6 +80,31 @@ public class Server {
                         sc.pipeline().addLast(new ServerHandler());
                     }
                 });
+
+
+        eventExecutor.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+
+                HashSet<String> clients = new HashSet<>();
+
+                Map<String,String> map = LoginAuthRespHandler.getNodeCheck();
+                System.out.println(map.size());
+
+                //遍历整个map
+                for (String key:map.keySet()) {
+
+                    clients.add(map.get(key));
+                }
+
+                System.out.println("在线住户数量为：" + clients.size());
+
+                //数据库表状态更新
+                MySQLDB.updateClientStatus(clients);
+
+            }
+        },10,10,TimeUnit.SECONDS);
+
 
         ChannelFuture cf = b.bind(NettyConstant.REMOTEIP,NettyConstant.PORT).sync();
 

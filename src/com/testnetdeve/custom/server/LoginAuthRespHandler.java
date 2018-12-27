@@ -24,29 +24,36 @@ import io.netty.channel.ChannelPipeline;
  * @date 2017年8月31日
  * @version 1.0
  */
+
 public class LoginAuthRespHandler extends ChannelInboundHandlerAdapter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LoginAuthRespHandler.class);
 	/**
 	 * 考虑到安全，链路的建立需要通过基于IP地址或者号段的黑白名单安全认证机制，多个IP通过逗号隔开
 	 */
-	private static final Map<String, String> nodeCheck = new ConcurrentHashMap<String, String>();
+	private volatile static  Map<String, String> nodeCheck = new ConcurrentHashMap<String, String>();
 
 	private String[] whiteList = { "127.0.0.1", "192.168.56.1" };
 
-	public static AttributeKey<String> MY_KEY =  AttributeKey.valueOf("zbk");
 
 
-	/**
+
+	//private static ChannelLocal<Map<String,String>> clientHolder;
+
+
+    /**
 	 * Calls {@link ChannelHandlerContext#fireChannelRead(Object)} to forward to
 	 * the next {@link ChannelHandler} in the {@link ChannelPipeline}.
 	 * 
 	 * Sub-classes may override this method to change behavior.
 	 */
 
+
+
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
 		AlarmMessage message = (AlarmMessage) msg;
+
 
 		// 如果是握手请求消息，处理，其它消息透传
 		if (message.getHeader() != null && message.getHeader().getType() == MessageType.LOGIN_REQ.value()) {
@@ -69,9 +76,11 @@ public class LoginAuthRespHandler extends ChannelInboundHandlerAdapter {
 				loginResp = isOK ? buildResponse(ResultType.SUCCESS) : buildResponse(ResultType.FAIL);
 				if (isOK)
 					nodeCheck.put(nodeIndex, message.getBody().toString());
+
+					//Server.clientMap.put(nodeIndex, message.getBody().toString());
 					//给Channel添加属性
-				    //ctx.channel().attr(MY_KEY).set((String) message.getBody());
-					MySQLDB.insertClientInfo((String) message.getBody());
+				    ctx.channel().attr(Server.MY_KEY).set(nodeCheck);
+					//MySQLDB.insertClientInfo((String) message.getBody());
                     System.out.println(nodeCheck.get(nodeIndex));
 			}
 			LOGGER.info("The login response is : {} body [{}]",loginResp,loginResp.getBody());
@@ -110,7 +119,7 @@ public class LoginAuthRespHandler extends ChannelInboundHandlerAdapter {
 
         if(nodeCheck.containsKey(nodeIndex)){
         	try{
-				MySQLDB.updateClientInfo(nodeCheck.get(nodeIndex));
+				//MySQLDB.updateClientInfo(nodeCheck.get(nodeIndex));
 			}catch (Exception e){
         		e.printStackTrace();
 			}
@@ -134,4 +143,5 @@ public class LoginAuthRespHandler extends ChannelInboundHandlerAdapter {
     public synchronized static Map<String, String> getNodeCheck() {
         return nodeCheck;
     }
+
 }

@@ -77,15 +77,4 @@ public class AlarmMessageDecoder extends LengthFieldBasedFrameDecoder {
 		return message;
 	}
 
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 }

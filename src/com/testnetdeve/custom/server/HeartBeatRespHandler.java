@@ -7,6 +7,7 @@ import com.testnetdeve.custom.struct.AlarmMessage;
 import com.testnetdeve.custom.struct.Header;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
+import io.netty.util.AttributeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -139,6 +140,13 @@ public class HeartBeatRespHandler extends ChannelInboundHandlerAdapter {
 
 			//channelPipeline.writeAndFlush(heartBeat);
 
+			/**
+			 * 测试，channel属性值在ChannelHandlers之间传递
+			 */
+			Map<String,String> clientMap = ctx.channel().attr(Server.MY_KEY).get();
+            for (String key:clientMap.keySet()) {
+                LOGGER.info("*** {} ***",clientMap.get(key));
+            }
 
 		} else {
 			ctx.fireChannelRead(msg);

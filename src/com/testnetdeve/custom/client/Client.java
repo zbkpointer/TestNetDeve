@@ -89,8 +89,8 @@ public class Client {
 					.handler(new Handlers());
 
 			// 发起异步连接操作，远程IP加本地IP
-            future = b.connect(new InetSocketAddress(host, port),
-					new InetSocketAddress(NettyConstant.LOCALIP, NettyConstant.LOCAL_PORT)).sync();
+            future = b.connect(new InetSocketAddress(NettyConstant.REMOTEIP, NettyConstant.PORT),
+					new InetSocketAddress(host, port)).sync();
 			
 			//手动发测试数据，验证是否会产生TCP粘包/拆包情况
             channel = future.channel();
@@ -212,10 +212,7 @@ public class Client {
 	}
 
 	public static void main(String[] args) throws Exception {
-        new Client().connect(NettyConstant.PORT, NettyConstant.REMOTEIP);
-
-
-
+			new Client().connect(NettyConstant.LOCAL_PORT, NettyConstant.LOCALIP);
     }
 
 

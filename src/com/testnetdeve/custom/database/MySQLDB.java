@@ -31,8 +31,7 @@ public class MySQLDB {
     private static CountDownLatch threadCompletedCounter = new CountDownLatch(THREAD_COUNT);
     private static AtomicInteger updCounter = new AtomicInteger(0);
     private static HashSet<String> sqlList = new HashSet<>();
-    private static List<String[]> updateList = new ArrayList<>();
-    private static List<String[]> insertList = new ArrayList<>();
+
 
     //开启数据库连接
     private static  Connection getConn(){
@@ -208,6 +207,8 @@ public class MySQLDB {
     public synchronized static void updateClientStatus(HashSet<String> clientIds){
         if(clientIds.size() >= 1) {
 
+            List<String[]> updateList = new ArrayList<>();
+            List<String[]> insertList = new ArrayList<>();
 
             Connection conn = null;
 
@@ -218,7 +219,7 @@ public class MySQLDB {
                 e.printStackTrace();
             }
 
-            Iterator iteratorClientIds = clientIds.iterator();
+            Iterator clientIdsIterator = clientIds.iterator();
 
 
             long currentTime = System.currentTimeMillis();
@@ -268,15 +269,16 @@ public class MySQLDB {
 
             long startSelectTime = System.currentTimeMillis();
 
-            while (iteratorClientIds.hasNext()) {
+            while (clientIdsIterator.hasNext()) {
                 //缓存住户字符串
-                String str = (String) iteratorClientIds.next();
+                String str = (String) clientIdsIterator.next();
                 String[] strings = str.split(",", -1);
-                iteratorClientIds.remove();
+                clientIdsIterator.remove();
 
 
                 if (sqlList.contains(str)) {
                     //如果数据库有此条数据，就更新
+
                     updateList.add(strings);
                 } else {
 
@@ -292,79 +294,75 @@ public class MySQLDB {
 
             LOGGER.info("需要更新的数据量：" + updateList.size());
 
-            if (updateList != null) {
 
-                Iterator updateIterator = updateList.iterator();
-                updateList = null;
-                try {
+            Iterator updateIterator = updateList.iterator();
+            updateList = null;
+            try {
 
-                    String updateSql = "update fa_client_status set onlinestatus = 1 where idofbuilding = ? " +
-                            "and cellofbuilding = ? and idofroom = ?";
-                    PreparedStatement prestUpdate = conn.prepareStatement(updateSql);
+                String updateSql = "update fa_client_status set onlinestatus = 1 where idofbuilding = ? " +
+                        "and cellofbuilding = ? and idofroom = ?";
+                PreparedStatement prestUpdate = conn.prepareStatement(updateSql);
 
-                    while (updateIterator.hasNext()) {
-                        String[] strings = (String[]) updateIterator.next();
-                        updateIterator.remove();
-                        prestUpdate.setString(1, strings[0]);
-                        prestUpdate.setString(2, strings[1]);
-                        prestUpdate.setString(3, strings[2]);
-                        prestUpdate.addBatch();
-                    }
-                    if (prestUpdate != null) {
-                        long startUpdateTime = System.currentTimeMillis();
-
-                        prestUpdate.executeBatch();
-                        conn.commit();
-
-                        long endUpdateTime = System.currentTimeMillis();
-                        prestUpdate.clearBatch();
-                        LOGGER.info("执行更新时间为：" + (endUpdateTime - startUpdateTime) / 1000.f + "秒");
-                        LOGGER.info("更新成功");
-                    } else {
-                        LOGGER.info("没有需要更新的值");
-                    }
-
-
-                } catch (SQLException e) {
-                    e.printStackTrace();
+                while (updateIterator.hasNext()) {
+                    String[] strings = (String[]) updateIterator.next();
+                    updateIterator.remove();
+                    prestUpdate.setString(1, strings[0]);
+                    prestUpdate.setString(2, strings[1]);
+                    prestUpdate.setString(3, strings[2]);
+                    prestUpdate.addBatch();
                 }
+                if (prestUpdate != null) {
+                    long startUpdateTime = System.currentTimeMillis();
+
+                    prestUpdate.executeBatch();
+                    conn.commit();
+
+                    long endUpdateTime = System.currentTimeMillis();
+                    prestUpdate.clearBatch();
+                    LOGGER.info("执行更新时间为：" + (endUpdateTime - startUpdateTime) / 1000.f + "秒");
+                    LOGGER.info("更新成功");
+                } else {
+                    LOGGER.info("没有需要更新的值");
+                }
+
+
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
 
-            if (insertList != null) {
 
-                Iterator insertIterator = insertList.iterator();
-                insertList = null;
+            Iterator insertIterator = insertList.iterator();
+            insertList = null;
 
-                try {
+            try {
 
-                    PreparedStatement prestInsert = null;
-                    String insertSql = "insert into fa_client_status (idofbuilding,cellofbuilding,idofroom,onlinestatus) values(?,?,?,?)";
-                    prestInsert = conn.prepareStatement(insertSql);
-                    while (insertIterator.hasNext()) {
-                        String[] strings = (String[]) insertIterator.next();
-                        insertIterator.remove();
+                PreparedStatement prestInsert = null;
+                String insertSql = "insert into fa_client_status (idofbuilding,cellofbuilding,idofroom,onlinestatus) values(?,?,?,?)";
+                prestInsert = conn.prepareStatement(insertSql);
+                while (insertIterator.hasNext()) {
+                    String[] strings = (String[]) insertIterator.next();
+                    insertIterator.remove();
 
-                        prestInsert.setString(1, strings[0]);
-                        prestInsert.setString(2, strings[1]);
-                        prestInsert.setString(3, strings[2]);
-                        //插入1表明是在线
-                        prestInsert.setInt(4, 1);
+                    prestInsert.setString(1, strings[0]);
+                    prestInsert.setString(2, strings[1]);
+                    prestInsert.setString(3, strings[2]);
+                    //插入1表明是在线
+                    prestInsert.setInt(4, 1);
 
-                        prestInsert.addBatch();
-                    }
-                    if (prestInsert != null) {
-
-                        prestInsert.executeBatch();
-                        conn.commit();
-                        prestInsert.clearBatch();
-                    } else {
-                        LOGGER.info("没有新的值需要插入");
-                    }
-
-
-                } catch (SQLException e) {
-                    e.printStackTrace();
+                    prestInsert.addBatch();
                 }
+                if (prestInsert != null) {
+
+                    prestInsert.executeBatch();
+                    conn.commit();
+                    prestInsert.clearBatch();
+                } else {
+                    LOGGER.info("没有新的值需要插入");
+                }
+
+
+            } catch (SQLException e) {
+                e.printStackTrace();
             }
 
 
