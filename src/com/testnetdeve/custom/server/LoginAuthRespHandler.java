@@ -140,7 +140,7 @@ public class LoginAuthRespHandler extends ChannelInboundHandlerAdapter {
 		ctx.fireExceptionCaught(cause);
 	}
 
-    public synchronized static Map<String, String> getNodeCheck() {
+    public  static Map<String, String> getNodeCheck() {
         return nodeCheck;
     }
 

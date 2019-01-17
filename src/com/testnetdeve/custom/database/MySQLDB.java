@@ -30,7 +30,7 @@ public class MySQLDB {
     private AtomicInteger next = new AtomicInteger(0);
     private static CountDownLatch threadCompletedCounter = new CountDownLatch(THREAD_COUNT);
     private static AtomicInteger updCounter = new AtomicInteger(0);
-    private static HashSet<String> sqlList = new HashSet<>();
+
 
 
     //开启数据库连接
@@ -209,6 +209,7 @@ public class MySQLDB {
 
             List<String[]> updateList = new ArrayList<>();
             List<String[]> insertList = new ArrayList<>();
+            HashSet<String> sqlList = new HashSet<>();
 
             Connection conn = null;
 
@@ -296,7 +297,7 @@ public class MySQLDB {
 
 
             Iterator updateIterator = updateList.iterator();
-            updateList = null;
+
             try {
 
                 String updateSql = "update fa_client_status set onlinestatus = 1 where idofbuilding = ? " +
@@ -332,7 +333,6 @@ public class MySQLDB {
 
 
             Iterator insertIterator = insertList.iterator();
-            insertList = null;
 
             try {
 

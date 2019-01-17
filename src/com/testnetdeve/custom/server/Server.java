@@ -1,9 +1,5 @@
 package com.testnetdeve.custom.server;
 
-
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.LoadingCache;
 import com.testnetdeve.NettyConstant;
 import com.testnetdeve.custom.codec.AlarmMessageDecoder;
 import com.testnetdeve.custom.codec.AlarmMessageEncoder;
@@ -89,7 +85,6 @@ public class Server {
                 HashSet<String> clients = new HashSet<>();
 
                 Map<String,String> map = LoginAuthRespHandler.getNodeCheck();
-                System.out.println(map.size());
 
                 //遍历整个map
                 for (String key:map.keySet()) {
@@ -101,6 +96,8 @@ public class Server {
 
                 //数据库表状态更新
                 MySQLDB.updateClientStatus(clients);
+
+
 
             }
         },10,10,TimeUnit.SECONDS);
