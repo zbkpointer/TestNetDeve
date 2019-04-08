@@ -10,6 +10,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 
+
 public class AlarmMessageEncoder extends MessageToByteEncoder<AlarmMessage> {
 
 	private MarshallingEncoder marshallingEncoder;
@@ -48,7 +49,7 @@ public class AlarmMessageEncoder extends MessageToByteEncoder<AlarmMessage> {
 		    keyArray = key.getBytes("UTF-8");
 		    sendBuf.writeInt(keyArray.length);//key的字符编码长度
 		    sendBuf.writeBytes(keyArray);
-		    value = param.getValue();
+			value = param.getValue();
 		    marshallingEncoder.encode(value, sendBuf);
 		}
 		key = null;
@@ -67,9 +68,8 @@ public class AlarmMessageEncoder extends MessageToByteEncoder<AlarmMessage> {
 		}
 		
 		//最后我们要获取整个数据包的总长度 也就是 header +  body 进行对 header length的设置
-		
-		// TODO:  解释： 在这里必须要-8个字节 ，是因为要把CRC和长度本身占的减掉了
-		//（官方中给出的是：LengthFieldBasedFrameDecoder中的lengthFieldOffset+lengthFieldLength）
+
+		//TODO：解码前后的数据一致，所以长度字段的值是其后所有数据的字节数之和
 		//总长度是在header协议的第二个标记字段中
 		//第一个参数是长度属性的索引位置
 

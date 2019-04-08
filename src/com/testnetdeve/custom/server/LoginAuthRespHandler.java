@@ -86,8 +86,8 @@ public class LoginAuthRespHandler extends ChannelInboundHandlerAdapter {
 			LOGGER.info("The login response is : {} body [{}]",loginResp,loginResp.getBody());
 			ctx.writeAndFlush(loginResp);
 		} else {
+
 			ctx.fireChannelRead(msg);
-		//	ctx.writeAndFlush(msg);
 		}
 	}
 

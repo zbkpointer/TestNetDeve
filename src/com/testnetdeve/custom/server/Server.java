@@ -52,7 +52,7 @@ public class Server {
 
         //BusinessHandler businessHandler = new BusinessHandler();
 
-        //3 辅助类。用于帮助我们创建NETTY服务
+        //3 辅助类。用于帮助创建NETTY服务
         ServerBootstrap b = new ServerBootstrap();
 
         b.group(boss, work)	//绑定两个工作线程组

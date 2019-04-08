@@ -2,8 +2,11 @@ package com.testnetdeve.custom.server;
 
 import com.testnetdeve.custom.struct.Header;
 import com.testnetdeve.custom.struct.AlarmMessage;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.util.ReferenceCountUtil;
+import io.netty.util.ReferenceCounted;
 
 public class ServerHandler extends ChannelInboundHandlerAdapter {
 
@@ -35,7 +38,9 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 //		responseMessage.setHeader(header);
 //		responseMessage.setBody("我是响应数据: " + requestMessage.getBody());
 //		ctx.writeAndFlush(responseMessage);
-    	
+
+        //职责链末端，销毁消息对象、
+        ReferenceCountUtil.release(msg);
     }
     
     @Override

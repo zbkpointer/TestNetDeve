@@ -144,7 +144,7 @@ public class Client {
                 }
             });
 
-			initSensorListeners();
+			//initSensorListeners();
 
 
 

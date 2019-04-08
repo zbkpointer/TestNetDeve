@@ -8,6 +8,7 @@ import com.testnetdeve.custom.struct.Header;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelPipeline;
 import io.netty.util.AttributeKey;
+import io.netty.util.ReferenceCountUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -149,6 +150,8 @@ public class HeartBeatRespHandler extends ChannelInboundHandlerAdapter {
             }
 
 		} else {
+
+			//ReferenceCountUtil.release(msg);
 			ctx.fireChannelRead(msg);
 		}
 	}
