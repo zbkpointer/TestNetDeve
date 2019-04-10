@@ -66,6 +66,13 @@ public class Server {
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel sc) throws Exception {
+                        /*
+                        sc.pipeline().addLast("frameDecoder",new ProtobufVarint32FrameDecoder());
+                        sc.pipeline().addLast("decoder",new ProtobufDecoder(AlarmProto.Alarm.getDefaultInstance()));
+                        sc.pipeline().addLast("frameEncoder",new ProtobufVarint32LengthFieldPrepender());
+                        sc.pipeline().addLast("encoder",new ProtobufEncoder());
+                        */
+
                         sc.pipeline().addLast(new AlarmMessageDecoder(1024*1024*5, 4, 4));
                         sc.pipeline().addLast(new AlarmMessageEncoder());
                         sc.pipeline().addLast("readTimeoutHandler",new ReadTimeoutHandler(50));

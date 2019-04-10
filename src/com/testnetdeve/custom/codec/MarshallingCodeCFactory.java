@@ -26,8 +26,7 @@ public final class MarshallingCodeCFactory {
 		//创建了MarshallingConfiguration对象，配置了版本号为5 
 		final MarshallingConfiguration configuration = new MarshallingConfiguration();
 		configuration.setVersion(5);
-		Marshaller marshaller = marshallerFactory.createMarshaller(configuration);
-		return marshaller;
+		return marshallerFactory.createMarshaller(configuration);
     }
 
     /**
@@ -39,7 +38,6 @@ public final class MarshallingCodeCFactory {
 		final MarshallerFactory marshallerFactory = Marshalling.getProvidedMarshallerFactory("serial");
 		final MarshallingConfiguration configuration = new MarshallingConfiguration();
 		configuration.setVersion(5);
-		Unmarshaller unmarshaller = marshallerFactory.createUnmarshaller(configuration);
-		return unmarshaller;
+		return marshallerFactory.createUnmarshaller(configuration);
     }
 }
