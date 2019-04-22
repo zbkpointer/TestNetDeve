@@ -1,17 +1,16 @@
-package com.testnetdeve.UnitTest;
+package com.testnetdeve.unittest;
 
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.testnetdeve.custom.proto.AlarmProto;
 import com.testnetdeve.custom.proto.MessageProto;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
 import io.netty.handler.codec.protobuf.ProtobufDecoder;
 import io.netty.handler.codec.protobuf.ProtobufEncoder;
-import io.netty.handler.codec.protobuf.ProtobufVarint32FrameDecoder;
-import io.netty.handler.codec.protobuf.ProtobufVarint32LengthFieldPrepender;
 import org.junit.Test;
 
 public class AlarmProtoTest {
@@ -143,11 +142,12 @@ public class AlarmProtoTest {
 
         EmbeddedChannel ch = new EmbeddedChannel();
 
-        ch.pipeline().addLast("frameDecoder",new LengthFieldBasedFrameDecoder(1048576,0,8,0,8));
-        //ch.pipeline().addLast("frameDecoder",new ProtobufVarint32FrameDecoder());
+        ch.pipeline().addLast("frameDecoder",new LengthFieldBasedFrameDecoder(1048576,0,4,0,4));
+     //   ch.pipeline().addLast("frameDecoder",new ProtobufVarint32FrameDecoder());
         ch.pipeline().addLast("decoder",new ProtobufDecoder(MessageProto.MessageBase.getDefaultInstance()));
-        ch.pipeline().addLast("frameEncoder",new LengthFieldPrepender(8));
-        //ch.pipeline().addLast("frameEncoder",new ProtobufVarint32LengthFieldPrepender());
+        ch.pipeline().addLast("frameEncoder",new LengthFieldPrepender(4));
+
+     //   ch.pipeline().addLast("frameEncoder",new ProtobufVarint32LengthFieldPrepender());
         ch.pipeline().addLast("encoder",new ProtobufEncoder());
 
 //        System.out.println(builder.build().toString());
@@ -172,11 +172,26 @@ public class AlarmProtoTest {
          * TODO：先写入数据进行编码，然后再读出数据进行解码
          */
         ch.writeOutbound(message.build());
+        //ch.writeOutbound(message.build());
+        //ch.flushInbound();
+
+        ByteBuf buf = null;
+
+
+
 
         ByteBuf byteBuf = ch.readOutbound();
-        System.out.println(byteBuf.toString());
+        ByteBuf byteBuf2 = ch.readOutbound();
 
-        ch.writeInbound(byteBuf);
+
+
+        ByteBuf byteBuf3 = Unpooled.compositeBuffer();
+        byteBuf3.writeBytes(byteBuf);
+        byteBuf3.writeBytes(byteBuf2);
+        System.out.println("number of readableBytes is: "+byteBuf3.readableBytes()+"\n"+"capacity of byte is: ");
+
+
+        ch.writeInbound(byteBuf3);
         ch.finish();
         MessageProto.MessageBase messageBase = ch.readInbound();
 

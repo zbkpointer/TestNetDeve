@@ -1,4 +1,4 @@
-package com.testnetdeve.UnitTest;
+package com.testnetdeve.unittest;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.embedded.EmbeddedChannel;

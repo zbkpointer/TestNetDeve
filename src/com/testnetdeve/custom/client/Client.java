@@ -10,8 +10,8 @@ import java.util.concurrent.TimeUnit;
 
 import com.testnetdeve.NettyConstant;
 
-import com.testnetdeve.custom.codec.AlarmMessageDecoder;
-import com.testnetdeve.custom.codec.AlarmMessageEncoder;
+import com.testnetdeve.custom.proto.AlarmProto;
+import com.testnetdeve.custom.proto.MessageProto;
 import com.testnetdeve.custom.sensor.GasSensor;
 import com.testnetdeve.custom.sensor.InfraredSensor;
 import com.testnetdeve.custom.sensor.Sensor;
@@ -21,7 +21,10 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.LengthFieldPrepender;
+import io.netty.handler.codec.protobuf.ProtobufDecoder;
+import io.netty.handler.codec.protobuf.ProtobufEncoder;
 
 public class Client {
 	private  static Client client;
@@ -94,6 +97,34 @@ public class Client {
 			
 			//手动发测试数据，验证是否会产生TCP粘包/拆包情况
             channel = future.channel();
+
+
+			AlarmProto.Alarm.Builder builder = AlarmProto.Alarm.newBuilder();
+
+			builder.setCommunity("皇后家园");
+			builder.setBuildingId(31);
+			builder.setBuildingPart("B");
+			builder.setCellId(1);
+			builder.setRoomId(204);
+			builder.setAlarmCategory("火警");
+			builder.setAttachment("当前时间");
+
+
+			MessageProto.MessageBase.Body.Builder body = MessageProto.MessageBase.Body.newBuilder();
+			body.setContext(builder.build());
+
+			MessageProto.MessageBase.Header.Builder header =MessageProto.MessageBase.Header.newBuilder();
+			header.setType(MessageProto.MessageBase.MessageType.SERVICE_REQ);
+
+
+			MessageProto.MessageBase.Builder message = MessageProto.MessageBase.newBuilder();
+			message.setHeader(header.build());
+			message.setBody(body.build());
+
+			for (int i = 0; i < 50; i++) {
+				channel.writeAndFlush(message.build());
+			}
+
 
 
 
@@ -186,18 +217,36 @@ public class Client {
 		}
 	}
 
+//	private class Handlers extends ChannelInitializer<SocketChannel>{
+//
+//        @Override
+//        protected void initChannel(SocketChannel ch) throws Exception {
+//            ch.pipeline().addLast(new AlarmMessageDecoder(1024 * 1024, 4, 4));
+//            ch.pipeline().addLast(new AlarmMessageEncoder());
+//            ch.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(50));
+//            ch.pipeline().addLast("LoginAuthHandler", new LoginAuthReqHandler());
+//            ch.pipeline().addLast("HeartBeatHandler", new HeartBeatReqHandler());
+//            ch.pipeline().addLast(new ClientHandler());
+//        }
+//    }
+
 	private class Handlers extends ChannelInitializer<SocketChannel>{
 
-        @Override
-        protected void initChannel(SocketChannel ch) throws Exception {
-            ch.pipeline().addLast(new AlarmMessageDecoder(1024 * 1024, 4, 4));
-            ch.pipeline().addLast(new AlarmMessageEncoder());
-            ch.pipeline().addLast("readTimeoutHandler", new ReadTimeoutHandler(50));
-            ch.pipeline().addLast("LoginAuthHandler", new LoginAuthReqHandler());
-            ch.pipeline().addLast("HeartBeatHandler", new HeartBeatReqHandler());
-            ch.pipeline().addLast(new ClientHandler());
-        }
-    }
+
+		@Override
+		protected void initChannel(SocketChannel ch) throws Exception {
+			ch.pipeline().addLast("frameDecoder",new LengthFieldBasedFrameDecoder(1024,0,4,0,4));
+			//ch.pipeline().addLast("frameDecoder",new LengthFieldBasedFrameDecoder(1048576,0,4,0,4));
+			// ch.pipeline().addLast("frameDecoder",new ProtobufVarint32FrameDecoder());
+			ch.pipeline().addLast("decoder",new ProtobufDecoder(MessageProto.MessageBase.getDefaultInstance()));
+			ch.pipeline().addLast("frameEncoder",new LengthFieldPrepender(4));
+
+			//  ch.pipeline().addLast("frameEncoder",new ProtobufVarint32LengthFieldPrepender());
+			ch.pipeline().addLast("encoder",new ProtobufEncoder());
+
+			ch.pipeline().addLast(new ClientHandler());
+		}
+	}
 
     public ChannelFuture getFuture() {
         return future;

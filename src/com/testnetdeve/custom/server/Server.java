@@ -1,9 +1,7 @@
 package com.testnetdeve.custom.server;
 
 import com.testnetdeve.NettyConstant;
-import com.testnetdeve.custom.codec.AlarmMessageDecoder;
-import com.testnetdeve.custom.codec.AlarmMessageEncoder;
-import com.testnetdeve.custom.database.MySQLDB;
+import com.testnetdeve.custom.proto.MessageProto;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -12,11 +10,13 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.LengthFieldPrepender;
+import io.netty.handler.codec.protobuf.ProtobufDecoder;
+import io.netty.handler.codec.protobuf.ProtobufEncoder;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.*;
 
-import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -27,6 +27,8 @@ public class Server {
 
     //存储客户端信息
     public static final Map<String,String> clientMap = new ConcurrentHashMap<>();
+
+    int[] a = new int[4];
 
     //构建缓存
 
@@ -66,48 +68,50 @@ public class Server {
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel sc) throws Exception {
-                        /*
-                        sc.pipeline().addLast("frameDecoder",new ProtobufVarint32FrameDecoder());
-                        sc.pipeline().addLast("decoder",new ProtobufDecoder(AlarmProto.Alarm.getDefaultInstance()));
-                        sc.pipeline().addLast("frameEncoder",new ProtobufVarint32LengthFieldPrepender());
-                        sc.pipeline().addLast("encoder",new ProtobufEncoder());
-                        */
+                        sc.pipeline().addLast("frameDecoder",new LengthFieldBasedFrameDecoder(1048576,0,4,0,4));
+                        // ch.pipeline().addLast("frameDecoder",new ProtobufVarint32FrameDecoder());
+                        sc.pipeline().addLast("decoder",new ProtobufDecoder(MessageProto.MessageBase.getDefaultInstance()));
+                        sc.pipeline().addLast("frameEncoder",new LengthFieldPrepender(4));
 
-                        sc.pipeline().addLast(new AlarmMessageDecoder(1024*1024*5, 4, 4));
-                        sc.pipeline().addLast(new AlarmMessageEncoder());
-                        sc.pipeline().addLast("readTimeoutHandler",new ReadTimeoutHandler(50));
-                        sc.pipeline().addLast("LoginAuthHandler",new LoginAuthRespHandler());
-                        sc.pipeline().addLast("HeartBeatHandler",new HeartBeatRespHandler());
-                       // sc.pipeline().addLast("AlarmMessageHandle",new AlarmMessageRespHandler());
-                       // sc.pipeline().addLast(eventExecutor,new BusinessHandler());
-                        sc.pipeline().addLast(new ServerHandler());
+                        //  ch.pipeline().addLast("frameEncoder",new ProtobufVarint32LengthFieldPrepender());
+                        sc.pipeline().addLast("encoder",new ProtobufEncoder());
+
+
+//                        sc.pipeline().addLast(new AlarmMessageDecoder(1024*1024*5, 4, 4));
+//                        sc.pipeline().addLast(new AlarmMessageEncoder());
+//                        sc.pipeline().addLast("readTimeoutHandler",new ReadTimeoutHandler(50));
+//                        sc.pipeline().addLast("LoginAuthHandler",new LoginAuthRespHandler());
+//                        sc.pipeline().addLast("HeartBeatHandler",new HeartBeatRespHandler());
+//                       // sc.pipeline().addLast("AlarmMessageHandle",new AlarmMessageRespHandler());
+//                       // sc.pipeline().addLast(eventExecutor,new BusinessHandler());
+                       sc.pipeline().addLast(new ServerHandler());
                     }
                 });
 
 
-        eventExecutor.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-
-                HashSet<String> clients = new HashSet<>();
-
-                Map<String,String> map = LoginAuthRespHandler.getNodeCheck();
-
-                //遍历整个map
-                for (String key:map.keySet()) {
-
-                    clients.add(map.get(key));
-                }
-
-                System.out.println("在线住户数量为：" + clients.size());
-
-                //数据库表状态更新
-                MySQLDB.updateClientStatus(clients);
-
-
-
-            }
-        },10,10,TimeUnit.SECONDS);
+//        eventExecutor.scheduleAtFixedRate(new Runnable() {
+//            @Override
+//            public void run() {
+//
+//                HashSet<String> clients = new HashSet<>();
+//
+//                Map<String,String> map = LoginAuthRespHandler.getNodeCheck();
+//
+//                //遍历整个map
+//                for (String key:map.keySet()) {
+//
+//                    clients.add(map.get(key));
+//                }
+//
+//                System.out.println("在线住户数量为：" + clients.size());
+//
+//                //数据库表状态更新
+//                MySQLDB.updateClientStatus(clients);
+//
+//
+//
+//            }
+//        },10,10,TimeUnit.SECONDS);
 
 
         ChannelFuture cf = b.bind(NettyConstant.REMOTEIP,NettyConstant.PORT).sync();

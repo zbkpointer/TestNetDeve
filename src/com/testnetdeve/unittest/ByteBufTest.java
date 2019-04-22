@@ -1,4 +1,4 @@
-package com.testnetdeve.UnitTest;
+package com.testnetdeve.unittest;
 
 import io.netty.buffer.*;
 import org.junit.Test;
@@ -87,9 +87,12 @@ public class ByteBufTest {
         eByteBuf.writeLong(1L);
         eByteBuf.writeInt(2);
 
+        System.out.println(eByteBuf.retain().toString());
+
         System.out.println("The size of eByteBuf is :" + eByteBuf.capacity());
 
         System.out.println(eByteBuf.readableBytes());
+        System.out.println(eByteBuf.getInt(4));
 
 
 

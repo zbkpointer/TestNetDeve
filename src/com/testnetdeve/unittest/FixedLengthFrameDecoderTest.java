@@ -1,4 +1,4 @@
-package com.testnetdeve.UnitTest;
+package com.testnetdeve.unittest;
 
 import com.testnetdeve.custom.server.FixedLengthFrameDecoder;
 import io.netty.buffer.ByteBuf;

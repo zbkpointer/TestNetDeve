@@ -1,5 +1,6 @@
 package com.testnetdeve.custom.server;
 
+import com.testnetdeve.custom.proto.MessageProto;
 import com.testnetdeve.custom.struct.Header;
 import com.testnetdeve.custom.struct.AlarmMessage;
 import io.netty.buffer.ByteBuf;
@@ -26,9 +27,9 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx /*NETTY服务上下文*/, Object msg /*实际的传输数据*/) throws Exception {
     	
-    	AlarmMessage requestMessage = (AlarmMessage)msg;
+//    	AlarmMessage requestMessage = (AlarmMessage)msg;
     	
-    	System.err.println("Server receive message from Client: " + requestMessage.getBody());
+//    	System.err.println("Server receive message from Client: " + requestMessage.getBody());
 
 //    	AlarmMessage responseMessage = new AlarmMessage();
 //		Header header = new Header();
@@ -39,7 +40,13 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 //		responseMessage.setBody("我是响应数据: " + requestMessage.getBody());
 //		ctx.writeAndFlush(responseMessage);
 
-        //职责链末端，销毁消息对象、
+        //职责链末端，销毁消息对象
+
+        MessageProto.MessageBase messageBase = (MessageProto.MessageBase)msg;
+
+        System.out.println(messageBase.getHeader().getType().getNumber());
+        System.out.println(messageBase.getBody().getContext().getBuildingPart());
+
         ReferenceCountUtil.release(msg);
     }
     
