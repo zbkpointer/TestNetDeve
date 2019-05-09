@@ -21,8 +21,8 @@ package com.testnetdeve;
  * @version 1.0
  */
 public final class NettyConstant {
-    public static final String REMOTEIP = "127.0.0.1";
-    public static final int PORT = 60000;
-    public static final int LOCAL_PORT = 12090;
-    public static final String LOCALIP = "127.0.0.1";
+    public static final String REMOTEIP = "192.168.0.109";
+    public static final int PORT =5000;
+    public static final int LOCAL_PORT = 1026;
+    public static final String LOCALIP = "192.168.0.109";
 }

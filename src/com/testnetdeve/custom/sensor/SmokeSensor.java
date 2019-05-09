@@ -13,7 +13,7 @@ public class SmokeSensor extends Sensor {
         this.addListener(new SensorEventListener() {
             @Override
             public void onSensorChanged() {
-                Client.getChannel().writeAndFlush(BuildAlarm.buildReqAlarmMessage("1,2,101,1"));
+                //Client.getChannel().writeAndFlush(BuildAlarm.buildReqAlarmMessage("1,2,101,1"));
             }
         });
     }

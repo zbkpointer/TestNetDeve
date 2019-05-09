@@ -29,7 +29,7 @@ public class SmokeAlarmCommand implements AlarmCommand {
 //                }
 //            },0,3,TimeUnit.SECONDS);
 
-        System.out.println(Client.getChannel().pipeline().first());
+       // System.out.println(Client.getChannel().pipeline().first());
        // System.out.println(Client.getChannel());
 
     }

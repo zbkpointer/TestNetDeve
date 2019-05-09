@@ -14,13 +14,13 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 	/**
 	 * 当我们通道进行激活的时候 触发的监听方法
 	 */
-    @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        System.out.println(ctx.channel().id());
-    
-    	System.err.println("--------通道激活------------");
-    }
-	
+//    @Override
+//    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+//        System.out.println(ctx.channel());
+//
+//    	System.err.println("--------通道激活------------");
+//    }
+//
     /**
      * 当我们的通道里有数据进行读取的时候 触发的监听方法
      */
@@ -42,19 +42,25 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 
         //职责链末端，销毁消息对象
 
-        MessageProto.MessageBase messageBase = (MessageProto.MessageBase)msg;
+//        MessageProto.MessageBase messageBase = (MessageProto.MessageBase)msg;
+//        ctx.writeAndFlush(messageBase);
+//
+//        System.out.println(messageBase.getHeader().getType().getNumber());
+//        System.out.println(messageBase.getBody().getContext().getBuildingPart());
 
-        System.out.println(messageBase.getHeader().getType().getNumber());
-        System.out.println(messageBase.getBody().getContext().getBuildingPart());
+//        String str = (String) msg;
+//        System.out.println(str);
+        ctx.writeAndFlush((String)msg+"\n");// loop message back
+
 
         ReferenceCountUtil.release(msg);
     }
     
-    @Override
-    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
-       System.err.println("--------数据读取完毕----------");
-    }
-    
+//    @Override
+//    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+//       System.err.println("--------数据读取完毕----------");
+//    }
+//
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
             throws Exception {

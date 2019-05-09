@@ -12,11 +12,16 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
+import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.protobuf.ProtobufDecoder;
 import io.netty.handler.codec.protobuf.ProtobufEncoder;
+import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.codec.string.StringEncoder;
 import io.netty.util.AttributeKey;
+import io.netty.util.CharsetUtil;
 import io.netty.util.concurrent.*;
 
+import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -27,6 +32,8 @@ public class Server {
 
     //存储客户端信息
     public static final Map<String,String> clientMap = new ConcurrentHashMap<>();
+
+    static final EventExecutorGroup group = new DefaultEventExecutorGroup(1500);
 
     int[] a = new int[4];
 
@@ -52,6 +59,7 @@ public class Server {
         //事件被EventExecutorGroup的某个EventExecutor执行，从ChannelPipeline中移除
         EventExecutorGroup eventExecutor = new DefaultEventExecutorGroup(1);
 
+
         //BusinessHandler businessHandler = new BusinessHandler();
 
         //3 辅助类。用于帮助创建NETTY服务
@@ -59,34 +67,13 @@ public class Server {
 
         b.group(boss, work)	//绑定两个工作线程组
                 .channel(NioServerSocketChannel.class)	//设置NIO的模式
-                .option(ChannelOption.SO_BACKLOG, 1024)	//设置TCP缓冲区
+                //.option(ChannelOption.SO_BACKLOG, 1024)	//设置TCP缓冲区
                 //.option(ChannelOption.SO_SNDBUF, 32*1024)	// 设置发送数据的缓存大小
-                .option(ChannelOption.SO_RCVBUF, 32*1024)	// 设置接受数据的缓存大小
+               // .option(ChannelOption.SO_RCVBUF, 32*1024)	// 设置接受数据的缓存大小
                 .childOption(ChannelOption.SO_KEEPALIVE, Boolean.TRUE)	// 设置保持连接
-                .childOption(ChannelOption.SO_SNDBUF, 32*1024)
+               // .childOption(ChannelOption.SO_SNDBUF, 32*1024)
                 // 初始化绑定服务通道
-                .childHandler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    protected void initChannel(SocketChannel sc) throws Exception {
-                        sc.pipeline().addLast("frameDecoder",new LengthFieldBasedFrameDecoder(1048576,0,4,0,4));
-                        // ch.pipeline().addLast("frameDecoder",new ProtobufVarint32FrameDecoder());
-                        sc.pipeline().addLast("decoder",new ProtobufDecoder(MessageProto.MessageBase.getDefaultInstance()));
-                        sc.pipeline().addLast("frameEncoder",new LengthFieldPrepender(4));
-
-                        //  ch.pipeline().addLast("frameEncoder",new ProtobufVarint32LengthFieldPrepender());
-                        sc.pipeline().addLast("encoder",new ProtobufEncoder());
-
-
-//                        sc.pipeline().addLast(new AlarmMessageDecoder(1024*1024*5, 4, 4));
-//                        sc.pipeline().addLast(new AlarmMessageEncoder());
-//                        sc.pipeline().addLast("readTimeoutHandler",new ReadTimeoutHandler(50));
-//                        sc.pipeline().addLast("LoginAuthHandler",new LoginAuthRespHandler());
-//                        sc.pipeline().addLast("HeartBeatHandler",new HeartBeatRespHandler());
-//                       // sc.pipeline().addLast("AlarmMessageHandle",new AlarmMessageRespHandler());
-//                       // sc.pipeline().addLast(eventExecutor,new BusinessHandler());
-                       sc.pipeline().addLast(new ServerHandler());
-                    }
-                });
+                .childHandler(new ChildChandler());
 
 
 //        eventExecutor.scheduleAtFixedRate(new Runnable() {
@@ -124,4 +111,46 @@ public class Server {
         work.shutdownGracefully();
         boss.shutdownGracefully();
     }
+
+
+
+    private static class ChildChandler extends ChannelInitializer<SocketChannel>{
+
+        @Override
+        protected void initChannel(SocketChannel sc) throws Exception {
+
+            sc.pipeline().addLast("lineDecoder",new LineBasedFrameDecoder(60));
+            sc.pipeline().addLast("decoder",new StringDecoder(Charset.forName("UTF8")));
+            sc.pipeline().addLast("encoder",new StringEncoder(Charset.forName("UTF8")));
+
+
+
+
+//
+//            sc.pipeline().addLast("frameDecoder",new LengthFieldBasedFrameDecoder(1048576,0,4,0,4));
+//            // ch.pipeline().addLast("frameDecoder",new ProtobufVarint32FrameDecoder());
+//            sc.pipeline().addLast("decoder",new ProtobufDecoder(MessageProto.MessageBase.getDefaultInstance()));
+//            sc.pipeline().addLast("frameEncoder",new LengthFieldPrepender(4));
+//
+//            //  ch.pipeline().addLast("frameEncoder",new ProtobufVarint32LengthFieldPrepender());
+//            sc.pipeline().addLast("encoder",new ProtobufEncoder());
+
+
+//                        sc.pipeline().addLast(new AlarmMessageDecoder(1024*1024*5, 4, 4));
+//                        sc.pipeline().addLast(new AlarmMessageEncoder());
+//                        sc.pipeline().addLast("readTimeoutHandler",new ReadTimeoutHandler(50));
+//                        sc.pipeline().addLast("LoginAuthHandler",new LoginAuthRespHandler());
+//                        sc.pipeline().addLast("HeartBeatHandler",new HeartBeatRespHandler());
+//                       // sc.pipeline().addLast("AlarmMessageHandle",new AlarmMessageRespHandler());
+//                       // sc.pipeline().addLast(eventExecutor,new BusinessHandler());
+            sc.pipeline().addLast(Server.group,"serverHandler",new ServerHandler());
+
+
+
+
+
+        }
+    }
+
+
 }

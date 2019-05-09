@@ -1,6 +1,7 @@
 package com.testnetdeve.custom.client;
 
 import java.net.InetSocketAddress;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -23,14 +24,17 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
+import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.protobuf.ProtobufDecoder;
 import io.netty.handler.codec.protobuf.ProtobufEncoder;
+import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.codec.string.StringEncoder;
 
 public class Client {
 	private  static Client client;
 
 	//将Channel声明为静态变量类型，类共享这个Channel
-	private  static  Channel channel;
+	private  Channel channel;
 
 	private ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 
@@ -43,6 +47,8 @@ public class Client {
 	public Client() {
 		//初始化传感器事件
 		initSensor();
+		future = null;
+		channel = null;
 
 	}
 
@@ -83,20 +89,22 @@ public class Client {
 
 
 
-	public void connect(int port, String host) throws Exception {
+	public void connect(int remote_port,String remote_ip,int port, String host) throws Exception {
 		// 配置客户端NIO线程组
 		try {
 
 			Bootstrap b = new Bootstrap();
-			b.group(group).channel(NioSocketChannel.class).option(ChannelOption.TCP_NODELAY, true)
-					.handler(new Handlers());
+			b.group(group).channel(NioSocketChannel.class)
+					 .option(ChannelOption.TCP_NODELAY, true)
+					 .option(ChannelOption.SO_KEEPALIVE, Boolean.TRUE)
+					 .handler(new Handlers());
 
 			// 发起异步连接操作，远程IP加本地IP
-            future = b.connect(new InetSocketAddress(NettyConstant.REMOTEIP, NettyConstant.PORT),
+            future = b.connect(new InetSocketAddress(remote_ip,remote_port),
 					new InetSocketAddress(host, port)).sync();
 			
 			//手动发测试数据，验证是否会产生TCP粘包/拆包情况
-            channel = future.channel();
+			channel = future.channel();
 
 
 			AlarmProto.Alarm.Builder builder = AlarmProto.Alarm.newBuilder();
@@ -121,9 +129,6 @@ public class Client {
 			message.setHeader(header.build());
 			message.setBody(body.build());
 
-			for (int i = 0; i < 50; i++) {
-				channel.writeAndFlush(message.build());
-			}
 
 
 
@@ -168,7 +173,8 @@ public class Client {
                 public void operationComplete(ChannelFuture future) throws Exception {
                     if(future.isSuccess()){
                         System.out.println("连接操作完成");
-                    }else {
+						channel = future.channel();
+					}else {
                         Throwable throwable = future.cause();
                         throwable.printStackTrace();
                     }
@@ -177,6 +183,11 @@ public class Client {
 
 			//initSensorListeners();
 
+			String str = "hello server\r\n";
+
+			for (int i = 0; i < 500; i++) {
+				channel.writeAndFlush(str);
+			}
 
 
 
@@ -196,7 +207,8 @@ public class Client {
 //            }
 
 
-			future.channel().closeFuture().sync();
+
+			channel.closeFuture().sync();
 		} finally {
 			// 所有资源释放完成之后，清空资源，再次发起重连操作
 			executor.execute(new Runnable() {
@@ -205,7 +217,7 @@ public class Client {
 					try {
 						TimeUnit.SECONDS.sleep(1);
 						try {
-							connect(NettyConstant.PORT, NettyConstant.REMOTEIP);// 发起重连操作
+							connect(NettyConstant.PORT,NettyConstant.REMOTEIP,NettyConstant.LOCAL_PORT, NettyConstant.LOCALIP);// 发起重连操作
 						} catch (Exception e) {
 							e.printStackTrace();
 						}
@@ -230,29 +242,40 @@ public class Client {
 //        }
 //    }
 
-	private class Handlers extends ChannelInitializer<SocketChannel>{
+//	private class Handlers extends ChannelInitializer<SocketChannel>{
+//
+//
+//		@Override
+//		protected void initChannel(SocketChannel ch) throws Exception {
+//			ch.pipeline().addLast("frameDecoder",new LengthFieldBasedFrameDecoder(1024,0,4,0,4));
+//			//ch.pipeline().addLast("frameDecoder",new LengthFieldBasedFrameDecoder(1048576,0,4,0,4));
+//			// ch.pipeline().addLast("frameDecoder",new ProtobufVarint32FrameDecoder());
+//			ch.pipeline().addLast("decoder",new ProtobufDecoder(MessageProto.MessageBase.getDefaultInstance()));
+//			ch.pipeline().addLast("frameEncoder",new LengthFieldPrepender(4));
+//
+//			//  ch.pipeline().addLast("frameEncoder",new ProtobufVarint32LengthFieldPrepender());
+//			ch.pipeline().addLast("encoder",new ProtobufEncoder());
+//
+//			ch.pipeline().addLast(new ClientHandler());
+//		}
+//	}
 
+	private class Handlers extends ChannelInitializer<SocketChannel>{
 
 		@Override
 		protected void initChannel(SocketChannel ch) throws Exception {
-			ch.pipeline().addLast("frameDecoder",new LengthFieldBasedFrameDecoder(1024,0,4,0,4));
-			//ch.pipeline().addLast("frameDecoder",new LengthFieldBasedFrameDecoder(1048576,0,4,0,4));
-			// ch.pipeline().addLast("frameDecoder",new ProtobufVarint32FrameDecoder());
-			ch.pipeline().addLast("decoder",new ProtobufDecoder(MessageProto.MessageBase.getDefaultInstance()));
-			ch.pipeline().addLast("frameEncoder",new LengthFieldPrepender(4));
-
-			//  ch.pipeline().addLast("frameEncoder",new ProtobufVarint32LengthFieldPrepender());
-			ch.pipeline().addLast("encoder",new ProtobufEncoder());
-
-			ch.pipeline().addLast(new ClientHandler());
+			ch.pipeline().addLast("lineDecoder",new LineBasedFrameDecoder(60));
+			ch.pipeline().addLast("decoder",new StringDecoder(Charset.forName("GBK")));
+			ch.pipeline().addLast("encoder",new StringEncoder(Charset.forName("GBK")));
 		}
 	}
+
 
     public ChannelFuture getFuture() {
         return future;
     }
 
-    public synchronized static Channel getChannel() {
+    public synchronized  Channel getChannel() {
         return channel;
     }
 
@@ -261,7 +284,7 @@ public class Client {
 	}
 
 	public static void main(String[] args) throws Exception {
-			new Client().connect(NettyConstant.LOCAL_PORT, NettyConstant.LOCALIP);
+			new Client().connect(NettyConstant.PORT,NettyConstant.REMOTEIP,NettyConstant.LOCAL_PORT, NettyConstant.LOCALIP);
     }
 
 

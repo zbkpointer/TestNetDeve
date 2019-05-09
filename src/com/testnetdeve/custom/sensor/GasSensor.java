@@ -12,7 +12,7 @@ public class GasSensor extends Sensor {
         this.sensorEventListener = new SensorEventListener() {
             @Override
             public void onSensorChanged() {
-                Client.getChannel().writeAndFlush(BuildAlarm.buildReqAlarmMessage("1,2,101,2"));
+                //Client.getChannel().writeAndFlush(BuildAlarm.buildReqAlarmMessage("1,2,101,2"));
             }
         };
     }
