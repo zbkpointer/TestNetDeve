@@ -173,7 +173,15 @@ public class Client {
                 public void operationComplete(ChannelFuture future) throws Exception {
                     if(future.isSuccess()){
                         System.out.println("连接操作完成");
-						channel = future.channel();
+
+
+						String str = "hello server\r\n";
+
+						for (int i = 0; i < 500; i++) {
+							channel.writeAndFlush(str);
+						}
+
+
 					}else {
                         Throwable throwable = future.cause();
                         throwable.printStackTrace();
@@ -183,11 +191,7 @@ public class Client {
 
 			//initSensorListeners();
 
-			String str = "hello server\r\n";
 
-			for (int i = 0; i < 500; i++) {
-				channel.writeAndFlush(str);
-			}
 
 
 
@@ -265,8 +269,8 @@ public class Client {
 		@Override
 		protected void initChannel(SocketChannel ch) throws Exception {
 			ch.pipeline().addLast("lineDecoder",new LineBasedFrameDecoder(60));
-			ch.pipeline().addLast("decoder",new StringDecoder(Charset.forName("GBK")));
-			ch.pipeline().addLast("encoder",new StringEncoder(Charset.forName("GBK")));
+			ch.pipeline().addLast("decoder",new StringDecoder(Charset.forName("UTF8")));
+			ch.pipeline().addLast("encoder",new StringEncoder(Charset.forName("UTF8")));
 		}
 	}
 

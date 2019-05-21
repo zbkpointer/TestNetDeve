@@ -8,7 +8,9 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.ServerSocketChannelConfig;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.SocketChannelConfig;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.LengthFieldPrepender;
@@ -37,6 +39,8 @@ public class Server {
 
     int[] a = new int[4];
 
+    public static int numClose = 0;
+
     //构建缓存
 
 
@@ -44,20 +48,21 @@ public class Server {
 
     public static void main(String[] args) throws Exception {
 
+
         //1 用于接受客户端连接的线程工作组
-        EventLoopGroup boss = new NioEventLoopGroup();
+        EventLoopGroup boss = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors()*3);
         //2 用于对接受客户端连接读写操作的线程工作组
-        EventLoopGroup work = new NioEventLoopGroup();
+        EventLoopGroup work = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors()*3);
 
         //执行高耗时操作
-        EventExecutor extractExecutor = new UnorderedThreadPoolEventExecutor(10);
+       // EventExecutor extractExecutor = new UnorderedThreadPoolEventExecutor(10);
 
-        ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+       // ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
 
 
         //事件被EventExecutorGroup的某个EventExecutor执行，从ChannelPipeline中移除
-        EventExecutorGroup eventExecutor = new DefaultEventExecutorGroup(1);
+        //EventExecutorGroup eventExecutor = new DefaultEventExecutorGroup(1);
 
 
         //BusinessHandler businessHandler = new BusinessHandler();
@@ -67,9 +72,9 @@ public class Server {
 
         b.group(boss, work)	//绑定两个工作线程组
                 .channel(NioServerSocketChannel.class)	//设置NIO的模式
-                //.option(ChannelOption.SO_BACKLOG, 1024)	//设置TCP缓冲区
-                //.option(ChannelOption.SO_SNDBUF, 32*1024)	// 设置发送数据的缓存大小
-               // .option(ChannelOption.SO_RCVBUF, 32*1024)	// 设置接受数据的缓存大小
+                .option(ChannelOption.SO_BACKLOG, 200*20)	//设置TCP最大连接数
+                .option(ChannelOption.SO_RCVBUF, 16*1024)	// 设置 接受数据的缓存大小
+                .option(ChannelOption.WRITE_SPIN_COUNT,8)
                 .childOption(ChannelOption.SO_KEEPALIVE, Boolean.TRUE)	// 设置保持连接
                // .childOption(ChannelOption.SO_SNDBUF, 32*1024)
                 // 初始化绑定服务通道
@@ -101,7 +106,22 @@ public class Server {
 //        },10,10,TimeUnit.SECONDS);
 
 
+
         ChannelFuture cf = b.bind(NettyConstant.REMOTEIP,NettyConstant.PORT).sync();
+
+        /**
+         * 打印服务器socket连接配置
+         */
+        ServerSocketChannelConfig channelConfig = (ServerSocketChannelConfig) cf.channel().config();
+        Map<ChannelOption<?>,Object> configMap = channelConfig.getOptions();
+        for (Map.Entry<ChannelOption<?>, Object> option:
+             configMap.entrySet()) {
+            System.out.println(option);
+        }
+
+
+
+
 
         System.out.println("Netty server start ok on: "
                 + (NettyConstant.REMOTEIP + " : " + NettyConstant.PORT));
@@ -126,8 +146,7 @@ public class Server {
 
 
 
-//
-//            sc.pipeline().addLast("frameDecoder",new LengthFieldBasedFrameDecoder(1048576,0,4,0,4));
+//sc.pipeline().addLast("frameDecoder",new LengthFieldBasedFrameDecoder(1048576,0,4,0,4));
 //            // ch.pipeline().addLast("frameDecoder",new ProtobufVarint32FrameDecoder());
 //            sc.pipeline().addLast("decoder",new ProtobufDecoder(MessageProto.MessageBase.getDefaultInstance()));
 //            sc.pipeline().addLast("frameEncoder",new LengthFieldPrepender(4));

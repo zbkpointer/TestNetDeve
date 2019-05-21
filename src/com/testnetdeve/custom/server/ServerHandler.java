@@ -4,11 +4,13 @@ import com.testnetdeve.custom.proto.MessageProto;
 import com.testnetdeve.custom.struct.Header;
 import com.testnetdeve.custom.struct.AlarmMessage;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.*;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
+import io.netty.util.concurrent.Future;
+import io.netty.util.concurrent.GenericFutureListener;
 
+@ChannelHandler.Sharable
 public class ServerHandler extends ChannelInboundHandlerAdapter {
 
 	/**
@@ -25,7 +27,7 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
      * 当我们的通道里有数据进行读取的时候 触发的监听方法
      */
     @Override
-    public void channelRead(ChannelHandlerContext ctx /*NETTY服务上下文*/, Object msg /*实际的传输数据*/) throws Exception {
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
     	
 //    	AlarmMessage requestMessage = (AlarmMessage)msg;
     	
@@ -62,11 +64,23 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 //    }
 //
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause)
-            throws Exception {
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+
+        cause.printStackTrace();
+
+        ctx.close().addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+                if (future.isSuccess()){
+                    System.out.println(future.channel() + "-->has been closed");
+                    System.out.println(Server.numClose++);
+                }
+            }
+        });
+
     	System.err.println("--------服务器数据读异常----------: ");
-    	cause.printStackTrace();
-        ctx.close();
+
+
     }
     
     

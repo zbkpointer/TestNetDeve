@@ -2,6 +2,12 @@ package com.testnetdeve.unittest;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.ServerSocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.internal.PlatformDependent;
 import jdk.jfr.Description;
 import org.junit.Test;
 
@@ -83,6 +89,55 @@ public class GeneralTest {
     }
 
 
+    @Test
+    public void eventLoopGroupTest(){
+
+        EventLoopGroup group = new NioEventLoopGroup(0);
+        int count = 0;
+
+        while (group.next() != null){
+            count++;
+        }
+        System.out.println(count);
+    }
+
+
+    @Test
+    public void threadCategoryTest(){
+
+
+        Task1 task1 = new Task1();
+        for (int i = 0; i < 10; i++) {
+            new Thread(task1).start();
+        }
+
+    }
+
+
+    private class Task1 implements Runnable{
+
+        @Override
+        public void run() {
+            System.out.println(Thread.currentThread().getName());
+        }
+    }
+
+    @Test
+    public void backlogNumTest(){
+
+
+
+        System.out.println(PlatformDependent.bitMode());
+
+
+        System.out.println(PlatformDependent.maxDirectMemory());
+
+        System.out.println(ChannelOption.SO_BACKLOG);
+
+
+
+
+    }
 
 
 
