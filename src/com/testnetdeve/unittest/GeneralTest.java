@@ -12,9 +12,7 @@ import jdk.jfr.Description;
 import org.junit.Test;
 
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 public class GeneralTest {
 
@@ -137,6 +135,20 @@ public class GeneralTest {
 
 
 
+    }
+
+
+    @Test
+    public void mapContainerTest(){
+
+        Map map = new HashMap();
+
+        map.put("a",1);
+        map.put("b",true);
+
+        for (Object option:map.entrySet()) {
+            System.out.println(option);
+        }
     }
 
 

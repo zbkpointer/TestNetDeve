@@ -52,9 +52,19 @@ public class ServerHandler extends ChannelInboundHandlerAdapter {
 
 //        String str = (String) msg;
 //        System.out.println(str);
-        ctx.writeAndFlush((String)msg+"\n");// loop message back
+        /**
+         * 计算业务的执行时间
+         */
+//        long startTime = System.nanoTime();
+//        ctx.writeAndFlush((String)msg+"\n").addListener(new ChannelFutureListener() {
+//            @Override
+//            public void operationComplete(ChannelFuture future) throws Exception {
+//                long elapsedNanos = System.nanoTime() - startTime;
+//                System.out.println("the elapsed Nanoseconds is :" + elapsedNanos + "*10(-9)s");
+//            }
+//        });// loop message back
 
-
+        ctx.writeAndFlush((String)msg+"\n");
         ReferenceCountUtil.release(msg);
     }
     

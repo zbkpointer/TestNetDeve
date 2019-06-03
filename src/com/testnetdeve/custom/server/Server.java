@@ -50,9 +50,9 @@ public class Server {
 
 
         //1 用于接受客户端连接的线程工作组
-        EventLoopGroup boss = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors()*3);
+        EventLoopGroup boss = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors());
         //2 用于对接受客户端连接读写操作的线程工作组
-        EventLoopGroup work = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors()*3);
+        EventLoopGroup work = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors()*2);
 
         //执行高耗时操作
        // EventExecutor extractExecutor = new UnorderedThreadPoolEventExecutor(10);
@@ -73,7 +73,7 @@ public class Server {
         b.group(boss, work)	//绑定两个工作线程组
                 .channel(NioServerSocketChannel.class)	//设置NIO的模式
                 .option(ChannelOption.SO_BACKLOG, 200*20)	//设置TCP最大连接数
-                .option(ChannelOption.SO_RCVBUF, 16*1024)	// 设置 接受数据的缓存大小
+                .option(ChannelOption.SO_RCVBUF, 16*1024)	// 设置接受数据的缓存大小
                 .option(ChannelOption.WRITE_SPIN_COUNT,8)
                 .childOption(ChannelOption.SO_KEEPALIVE, Boolean.TRUE)	// 设置保持连接
                // .childOption(ChannelOption.SO_SNDBUF, 32*1024)
